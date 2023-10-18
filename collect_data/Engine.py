@@ -1,5 +1,5 @@
 # import the classes from news-crawlers.py
-from tags_crawler import ambitoScrapper, BaseScrapper, pagina12Scrapper, infobaeScrapper, clarinScrapper
+from tags_crawler import pagina12Scrapper, infobaeScrapper, clarinScrapper
 import sys
 
 
@@ -12,9 +12,7 @@ if __name__ == '__main__':
     news_site = sys.argv[1]
 
     Scrapper = None
-    if news_site == 'ambito':
-        Scrapper = ambitoScrapper()
-    elif news_site == 'pagina12':
+    if news_site == 'pagina12':
         Scrapper = pagina12Scrapper()
     elif news_site == 'infobae':
         Scrapper = infobaeScrapper()

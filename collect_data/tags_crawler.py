@@ -7,107 +7,6 @@ from bs4 import BeautifulSoup
 import json
 import re
 
-DATA_DIR = "data/"
-# Path to the .crx file
-path_to_adblocker = './adblock.crx'
-
-# it will have the funcitons that will be common to all the scrappers
-class BaseScrapper:
-    def __init__(self):
-        
-        # keyterms is a list of strings that will be used to filter the news
-        self.keyterms = ["myriam bregman"]
-        # setting path to the chrome executable and the chrome driver
-        self.chrome_path = "./chrome-linux64/chrome"
-        self.chrome_driver_path = "./chromedriver"
-        # setting the options for the chrome driver
-        self.options = webdriver.ChromeOptions()
-        self.options.binary_location = self.chrome_path
-        self.options.add_extension(path_to_adblocker)
-        # setting the driver
-        self.driver = webdriver.Chrome(self.chrome_driver_path, options=self.options)
-        
-        try:
-            time.sleep(7)  # give some time for the new tab to open
-
-            if len(self.driver.window_handles) > 1:
-                self.driver.switch_to.window(self.driver.window_handles[1])  # switch to new tab
-                self.driver.close()  # close new tab
-                self.driver.switch_to.window(self.driver.window_handles[0])  # switch back to main tab
-        except:
-            pass
-            
-    
-    def GET_page(self, url):
-        try:
-            response = requests.get(url)
-            response.raise_for_status()  # Check if the request was successful
-            return response.content
-        except requests.RequestException as e:
-            print(f"Failed to get content from {url}: {e}")
-            return None
-    
-    def collec_hrefs(self, page_content):
-        raise NotImplementedError("This method should be overridden by child classes")
-
-
-
-# tatti website. 
-class ambitoScrapper(BaseScrapper):
-    def __init__(self):
-        super().__init__()
-        self.dir = DATA_DIR+"ambito/"
-
-    def extract_hrefs(self):
-        # extract all the relevant links from the search page
-        links = []
-        # check if 'gs-title' is in the class of the link and 'data-cturl' is in the attributes using selenium
-        try:
-            for link in self.driver.find_elements(By.XPATH, "//a[contains(@class, 'gs-title')]"):
-                if link.get_attribute('data-cturl'):
-                    links.append(link.get_attribute('data-cturl'))
-            return links
-        except Exception as e:
-            print(f"Could not extract links: {e}")
-        
-    def collect_hrefs(self):
-        term_dict = {}
-        for term in self.keyterms:
-            # split the term based on the space and join it with a +
-            term = "+".join(term.split(" "))
-            term_dict[term] = []
-            try:
-                self.driver.get(f"https://www.ambito.com/contenidos/resultado.html?search={term}")
-                page_div = self.driver.find_element(By.XPATH, '//*[@id="___gcse_0"]/div/div/div/div[5]/div[2]/div/div/div[2]/div')
-                pages = page_div.find_elements(By.CLASS_NAME, 'gsc-cursor-page')
-                
-
-                for page_n in len(pages):
-                    page_div = self.driver.find_element(By.XPATH, '//*[@id="___gcse_0"]/div/div/div/div[5]/div[2]/div/div/div[2]/div')
-                    current_page = page_div.find_elements(By.CLASS_NAME, 'gsc-cursor-current-page')[page_n]
-                    
-                    term_dict[term].extend(self.extract_hrefs())
-                    try:
-                        # hover over the button and click it
-                        self.driver.execute_script("arguments[0].scrollIntoView();", current_page)
-                        self.driver.execute_script("arguments[0].click();", current_page)
-                        # wait for the page to load
-                        time.sleep(3)
-
-                    except Exception as e:
-                        print(f"Could not click the next page: {e}")
-            except:
-                print("Could not get the page")
-                continue
-            
-            # make a dir for if not already present
-            if not os.path.isdir(self.dir):
-                os.mkdir(self.dir)
-                
-            # write the term_links to a file
-            with open(f"{self.dir+term.replace('+','-')}_hrefs.txt", "w") as f:
-                for link in term_dict[term]:
-                    f.write(link + "\n")
             
 class pagina12Scrapper:
     keyterms_dict = {
@@ -162,7 +61,7 @@ class pagina12Scrapper:
             
 
         # write the term_links to a file
-        with open(f"{self.dir}pagina12_hrefs.txt", "w") as f:
+        with open(f"{self.dir}pagina12tags_hrefs.txt", "w") as f:
             for link in hrefs:
                 f.write(link + "\n")
 
@@ -216,7 +115,7 @@ class infobaeScrapper:
                 print(e)
         
         # write the term_links to a file
-        with open(f"{self.dir}infobae_hrefs.txt", "w") as f:
+        with open(f"{self.dir}infobaetags_hrefs.txt", "w") as f:
             for link in hrefs:
                 f.write(link + "\n")
 
