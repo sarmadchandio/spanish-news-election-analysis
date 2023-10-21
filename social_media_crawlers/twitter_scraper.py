@@ -3,9 +3,10 @@
 
 USERNAME = ''
 PASSWORD=''
+SCROLLS = 50
 candidates = {'Myriam Teresa Bregman':['myriam bregman'],'Sergio Tomas Massa':['sergio massa','massa','panqueque'],'Patricia Bullrich':['patricia bullrich','montonera'],'Javier Milei':['javier milei', 'milei'],'Juan Schiaretti':['juan schiaretti']}
 
-
+#Define end date
 end_date = datetime(2023, 8, 15).date()
 
 # Define the start date
@@ -30,11 +31,6 @@ tweet_set = {}
 # Define an empty list to store the date strings
 date_strings = []
 
-
-
-
-
-
 while end_date >= start_date:
     end_date -= timedelta(days=2)
     prev_date = end_date+timedelta(days=2)
@@ -48,10 +44,10 @@ def get_data(page):
     # Loop through the tweet elements and extract the desired information
     for tweet_element in tweet_elements:
         try:
+            # Extract tweet time
             tweet_time = tweet_element.find("time")['datetime']
             # Extract tweet text
             tweet_text = tweet_element.find("div", {"data-testid": "tweetText"}).text
-            # Extract tweet time
             # Extract tweeter handle
             tweeter_handle = tweet_element.find("div", class_="css-1dbjc4n r-1awozwy r-18u37iz r-1wbh5a2 r-dnmrzs r-1ny4l3l").text.split('@')[0]
             # Extract tweet id
@@ -66,10 +62,7 @@ def get_data(page):
     return(tweet_dic)
 
 
-
 options = Options()
-#options.binary_location=r'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe'
-#options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 options.add_argument('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome') #Path to your chrome profile
 
 driver = webdriver.Chrome()
@@ -125,19 +118,13 @@ for candidate in candidates:
         hashtag_set = [hashtag]
         hashquery = ' AND '.join(hashtag_set)
         for DATE in date_strings:
-            
             time.sleep(5)
             END_DATE = DATE[0]
             START_DATE = DATE[1]
-            #https://twitter.com/search?lang=es&q=(%23milei)%20until%3A2023-01-02%20since%3A2023-01-01&src=typed_query
             query_url = 'https://twitter.com/search?lang=es&q=('+hashquery+')%20until%3A'+END_DATE+'%20since%3A'+START_DATE+'&src=typed_query'
-            #url = 'https://twitter.com/search?lang=es&q=('+hashquery+')%20until%3A2023-03-04%20since%3A2023-03-03&src=typed_query
             driver.get(query_url)
-            old = driver.page_source
-            page = ''
-            scrolls = 100
             i = 0
-            while(i<50):
+            while(i<SCROLLS):
                 i+=1
                 print(i)
                 try:
@@ -147,9 +134,6 @@ for candidate in candidates:
                     driver.get(query_url)
                     print('TimeOut')
                 except:
-                    
-                    old = page
-
                     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                     page = driver.page_source
                     tweets = get_data(page)
